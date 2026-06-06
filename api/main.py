@@ -52,8 +52,7 @@ def match_ideal_type():
     """
 
     # 🌐 絕對純淨的 API 請求路徑（已徹底洗白）
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){API_KEY}"
-    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     # 📝 宣告標頭（確保絕對定義，修復 name 'headers' is not defined 錯誤）
     headers = {"Content-Type": "application/json"}
     
