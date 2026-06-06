@@ -51,7 +51,8 @@ def match_ideal_type():
     """
 
     # 🌐 使用純網址 HTTP 請求，完全繞過 SDK 衝突
-    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){API_KEY}"
+    # 🌐 乾乾淨淨的網址，不帶任何中括號或奇怪的符號
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
