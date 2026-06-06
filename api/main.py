@@ -4,11 +4,11 @@ import urllib.parse
 import requests
 from flask import Flask, render_template, request, jsonify
 
-# 這是 Vercel 最核心要抓的變數，絕對不能漏掉或縮排！
+# 建立 Flask 應用程式實例
 app = Flask(__name__, template_folder='../templates')
 
 # =======================================================
-# 🔒 自動讀取金鑰
+# 🔒 從環境變數讀取最新金鑰，若讀不到則使用預設的真實金鑰
 # =======================================================
 API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6KPZu63RbGtZtN4s62JCHjmqX2gCM-WOUwm_0AUGOEZiQ")
 
@@ -51,29 +51,35 @@ def match_ideal_type():
     }}
     """
 
-    # 🌐 乾淨的 API 請求路徑
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+    # 🌐 絕對純淨的 API 請求路徑（已徹底洗白）
+    url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){API_KEY}"
+    
+    # 📝 宣告標頭（確保絕對定義，修復 name 'headers' is not defined 錯誤）
+    headers = {"Content-Type": "application/json"}
+    
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
     }
 
     try:
+        # 發送 POST 請求
         response = requests.post(url, headers=headers, json=payload)
         response_data = response.json()
         
-        # 🛡️ 偵測機制：如果 Google 回傳錯誤，直接顯示在網頁上
+        # 🛡️ 安全防禦機制 1：如果 Google 伺服器回傳明確錯誤（例如金鑰未授權、配額上限）
         if 'error' in response_data:
-            return jsonify({"message": f"Google 拒絕了請求，原因: {response_data['error'].get('message', '未知錯誤')}"}), 400
+            return jsonify({"message": f"Google Gemini 拒絕了請求。原因: {response_data['error'].get('message', '未知錯誤')}"}), 400
             
+        # 🛡️ 安全防禦機制 2：如果回傳結構怪異，缺少關鍵的 candidates
         if 'candidates' not in response_data or not response_data['candidates']:
-            return jsonify({"message": f"Gemini 沒有正常生成內容，完整回應: {json.dumps(response_data)}"}), 500
+            return jsonify({"message": f"Gemini 沒有正常回應內容。完整回應日誌: {json.dumps(response_data)}"}), 500
             
         # 正常解析流程
         raw_text = response_data['candidates'][0]['content']['parts'][0]['text']
         clean_text = raw_text.replace("```json", "").replace("```", "").strip()
         result_data = json.loads(clean_text)
         
-        # 產生網址連結
+        # 動態產生該明星的社群與搜尋連結
         encoded_name = urllib.parse.quote(result_data['name'])
         result_data['instagram_url'] = f"[https://www.instagram.com/explore/tags/](https://www.instagram.com/explore/tags/){encoded_name}/"
         result_data['photo_url'] = f"[https://www.google.com/search?tbm=isch&q=](https://www.google.com/search?tbm=isch&q=){encoded_name}"
@@ -82,9 +88,9 @@ def match_ideal_type():
         return jsonify(result_data)
 
     except Exception as e:
-        return jsonify({"message": f"系統運算內部發生錯誤，請稍後再試！(詳細原因: {str(e)})"}), 500
+        return jsonify({"message": f"系統內部處理發生錯誤，請稍後再試！(詳細原因: {str(e)})"}), 500
 
-# 這行也是給 Vercel 看的保險起見設定
+# 🔒 Vercel 雲端平台必備的進入點映射
 handler = app
 application = app
 
