@@ -4,10 +4,11 @@ import urllib.parse
 import requests
 from flask import Flask, render_template, request, jsonify
 
+# 這是 Vercel 最核心要抓的變數，絕對不能漏掉或縮排！
 app = Flask(__name__, template_folder='../templates')
 
 # =======================================================
-# 🔒 正確讀取你們在 AI Studio 申請的 AQ. 開頭最新金鑰
+# 🔒 自動讀取金鑰
 # =======================================================
 API_KEY = os.getenv("GEMINI_API_KEY", "AQ.Ab8RN6KPZu63RbGtZtN4s62JCHjmqX2gCM-WOUwm_0AUGOEZiQ")
 
@@ -50,7 +51,7 @@ def match_ideal_type():
     }}
     """
 
-    # 🌐 新版 AQ. 金鑰最安全、最標準的端點路徑
+    # 🌐 乾淨的 API 請求路徑
     url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -61,7 +62,7 @@ def match_ideal_type():
         response = requests.post(url, headers=headers, json=payload)
         response_data = response.json()
         
-        # 🛡️ 偵測機制：如果 Google 回傳錯誤訊息，直接吐在網頁上讓我們看原因
+        # 🛡️ 偵測機制：如果 Google 回傳錯誤，直接顯示在網頁上
         if 'error' in response_data:
             return jsonify({"message": f"Google 拒絕了請求，原因: {response_data['error'].get('message', '未知錯誤')}"}), 400
             
@@ -73,6 +74,20 @@ def match_ideal_type():
         clean_text = raw_text.replace("```json", "").replace("```", "").strip()
         result_data = json.loads(clean_text)
         
-        # 產生相對應網址連結
+        # 產生網址連結
         encoded_name = urllib.parse.quote(result_data['name'])
-        result_data
+        result_data['instagram_url'] = f"[https://www.instagram.com/explore/tags/](https://www.instagram.com/explore/tags/){encoded_name}/"
+        result_data['photo_url'] = f"[https://www.google.com/search?tbm=isch&q=](https://www.google.com/search?tbm=isch&q=){encoded_name}"
+        result_data['wikipedia_url'] = f"[https://zh.wikipedia.org/wiki/](https://zh.wikipedia.org/wiki/){encoded_name}"
+        
+        return jsonify(result_data)
+
+    except Exception as e:
+        return jsonify({"message": f"系統運算內部發生錯誤，請稍後再試！(詳細原因: {str(e)})"}), 500
+
+# 這行也是給 Vercel 看的保險起見設定
+handler = app
+application = app
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
